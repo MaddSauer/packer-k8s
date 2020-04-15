@@ -1,0 +1,46 @@
+{
+  "builders": [{
+      "type": "openstack",
+      "image_name": "ubuntu_k8s_K8SVERSION_containerd",
+      "source_image": "SOURCE_ID",
+      "flavor": "FLAVOR",
+      "floating_ip_pool": "FLOATING-NET",
+      "networks": "NETWORK",
+      "security_groups": ["default","SECGROUP"],
+      "ssh_username": "SSHUSER"
+    }
+  ],
+  "provisioners": [{
+    "type": "shell",
+    "inline": [
+      "sleep 30",
+      "sudo apt-get update",
+      "sudo apt-get upgrade -y",
+      "sudo apt-get install -y apt-transport-https curl",
+      "echo 'deb https://apt.kubernetes.io/ kubernetes-xenial main' | sudo tee /etc/apt/sources.list.d/kubernetes.list",
+      "curl -s https://packages.cloud.google.com/apt/doc/apt-key.gpg | sudo apt-key add -",
+      "sudo apt-get update",
+      "sudo apt-get install -y kubelet=K8SVERSION-00 kubeadm=K8SVERSION-00 kubectl=K8SVERSION-00",
+      "sudo apt-mark hold kubelet kubeadm kubectl"
+    ]
+  },{
+    "type": "shell",
+    "inline": [
+      "echo 'overlay' | sudo tee /etc/modules-load.d/containerd.conf",
+      "echo 'br_netfilter' | sudo tee -a /etc/modules-load.d/containerd.conf",
+      "echo 'net.bridge.bridge-nf-call-iptables  = 1' | sudo tee /etc/sysctl.d/99-kubernetes-cri.conf",
+      "echo 'net.ipv4.ip_forward                 = 1' | sudo tee -a /etc/sysctl.d/99-kubernetes-cri.conf",
+      "echo 'net.bridge.bridge-nf-call-ip6tables = 1' | sudo tee -a /etc/sysctl.d/99-kubernetes-cri.conf",
+      "sudo sysctl --system",
+      "curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo apt-key add -",
+      "sudo add-apt-repository 'deb [arch=amd64] https://download.docker.com/linux/ubuntu '$(lsb_release -cs)' stable'",
+      "sudo apt-get update",
+      "sudo apt-get install -y containerd.io",
+      "sudo apt-mark hold containerd.io",
+      "sudo mkdir -p /etc/containerd",
+      "sudo containerd config default | sudo tee /etc/containerd/config.toml",
+      "sudo systemctl restart containerd",
+      "sudo systemctl enable containerd"
+    ]
+  }]
+}

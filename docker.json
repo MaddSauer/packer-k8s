@@ -1,0 +1,35 @@
+{
+  "builders": [{
+      "type": "openstack",
+      "image_name": "ubuntu_k8s_K8SVERSION_docker",
+      "source_image": "SOURCE_ID",
+      "flavor": "FLAVOR",
+      "floating_ip_pool": "FLOATING-NET",
+      "networks": "NETWORK",
+      "security_groups": ["default","SECGROUP"],
+      "ssh_username": "SSHUSER"
+    }
+  ],
+  "provisioners": [{
+    "type": "shell",
+    "inline": [
+      "sleep 30",
+      "sudo apt-get update",
+      "sudo apt-get upgrade -y",
+      "sudo apt-get install -y apt-transport-https curl",
+      "echo 'deb https://apt.kubernetes.io/ kubernetes-xenial main' | sudo tee /etc/apt/sources.list.d/kubernetes.list",
+      "curl -s https://packages.cloud.google.com/apt/doc/apt-key.gpg | sudo apt-key add -",
+      "sudo apt-get update",
+      "sudo apt-get install -y kubelet=K8SVERSION-00 kubeadm=K8SVERSION-00 kubectl=K8SVERSION-00",
+      "sudo apt-mark hold kubelet kubeadm kubectl"
+    ]
+  },{
+    "type": "shell",
+    "inline": [
+      "sudo apt-get install -y docker.io",
+      "sudo apt-mark hold docker.io",
+      "sudo systemctl enable docker",
+      "sudo systemctl restart docker"
+    ]
+  }]
+}
